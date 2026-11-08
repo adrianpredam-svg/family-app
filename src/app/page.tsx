@@ -8,5 +8,5 @@ export default async function Home() {
   const me = await getCurrentMember();
   if (!me) redirect("/login");
   const members = await listMembers();
-  return <Dashboard me={me} members={members} />;
+  return <Dashboard me={me} members={members} homeUrl={process.env.HOME_URL || null} />;
 }

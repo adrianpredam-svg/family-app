@@ -12,7 +12,7 @@ import { Header } from "./Header";
 
 type Filter = "all" | "mine" | number;
 
-export function Dashboard({ me, members }: { me: PublicMember; members: PublicMember[] }) {
+export function Dashboard({ me, members, homeUrl }: { me: PublicMember; members: PublicMember[]; homeUrl: string | null }) {
   const calendar = useRef<FullCalendar>(null);
   const [mounted, setMounted] = useState(false);
   const [isPhone, setIsPhone] = useState(true);
@@ -136,7 +136,7 @@ export function Dashboard({ me, members }: { me: PublicMember; members: PublicMe
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-6xl flex-col">
-      <Header me={me} onOpenTask={openTask} />
+      <Header me={me} onOpenTask={openTask} homeUrl={homeUrl} />
 
       <nav className="flex gap-2 overflow-x-auto px-4 pb-3" aria-label="Show tasks for">
         {chips.map((c) => (

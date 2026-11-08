@@ -5,7 +5,7 @@ import type { PublicMember } from "@/lib/auth";
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "⌫"];
 
-export function LoginForm({ members }: { members: PublicMember[] }) {
+export function LoginForm({ members, next = "/" }: { members: PublicMember[]; next?: string }) {
   const [selected, setSelected] = useState<PublicMember | null>(null);
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
@@ -21,7 +21,7 @@ export function LoginForm({ members }: { members: PublicMember[] }) {
       body: JSON.stringify({ memberId: selected.id, pin: value }),
     });
     if (res.ok) {
-      window.location.href = "/";
+      window.location.href = next;
       return;
     }
     setError((await res.json().catch(() => ({}))).error ?? "Something went wrong");

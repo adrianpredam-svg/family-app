@@ -1,7 +1,8 @@
 import { SignJWT, jwtVerify } from "jose";
 
 // Kept free of Next.js imports so it can run in middleware (edge) and in tests.
-export const SESSION_COOKIE = "family_session";
+// v2: the cookie is shared with sub-domains (e.g. home.preda.app) when COOKIE_DOMAIN is set.
+export const SESSION_COOKIE = "family_session_v2";
 export const SESSION_DAYS = 90;
 
 function secretKey() {

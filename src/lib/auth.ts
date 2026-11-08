@@ -25,12 +25,14 @@ export async function startSession(memberId: number) {
     sameSite: "lax",
     path: "/",
     maxAge: SESSION_DAYS * 24 * 3600,
+    // e.g. ".preda.app" so the same PIN login also unlocks home.preda.app
+    domain: process.env.COOKIE_DOMAIN || undefined,
   });
 }
 
 export async function endSession() {
   const store = await cookies();
-  store.delete(SESSION_COOKIE);
+  store.set(SESSION_COOKIE, "", { path: "/", maxAge: 0, domain: process.env.COOKIE_DOMAIN || undefined });
 }
 
 export async function listMembers(): Promise<PublicMember[]> {

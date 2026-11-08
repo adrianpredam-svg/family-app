@@ -25,6 +25,8 @@ Set these in Coolify → your app → Environment Variables. See `.env.example`.
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | Push keys. Make once with `npx web-push generate-vapid-keys` |
 | `VAPID_SUBJECT` | `mailto:adrian@preda.app` |
 | `APP_URL` | `https://preda.app` |
+| `COOKIE_DOMAIN` | `.preda.app` — lets the same PIN login unlock `home.preda.app` |
+| `HOME_URL` | Optional house button, e.g. `https://home.preda.app/preda-home-drawing/plan` |
 | `SEED_DEMO_DATA` | `true` only for preview deployments (adds Mum/Dad/Kid with PIN 0000) |
 
 **Add a family member or change a PIN:** edit `FAMILY_MEMBERS` in Coolify and redeploy.

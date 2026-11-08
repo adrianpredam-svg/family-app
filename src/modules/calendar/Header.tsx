@@ -7,7 +7,7 @@ import { isIos, isStandalone, usePush } from "@/modules/notifications/usePush";
 
 const HINT_KEY = "install-hint-dismissed";
 
-export function Header({ me, onOpenTask }: { me: PublicMember; onOpenTask: (id: number) => void }) {
+export function Header({ me, onOpenTask, homeUrl }: { me: PublicMember; onOpenTask: (id: number) => void; homeUrl: string | null }) {
   const [menu, setMenu] = useState(false);
   const [today, setToday] = useState("");
   const [showInstallHint, setShowInstallHint] = useState(false);
@@ -63,6 +63,15 @@ export function Header({ me, onOpenTask }: { me: PublicMember; onOpenTask: (id: 
           <h1 className="truncate text-xl font-bold">Preda Family</h1>
           <p className="truncate text-sm text-[var(--muted)]">{today}</p>
         </div>
+        {homeUrl && (
+          <a href={homeUrl} className="rounded-full p-2" aria-label="Open the house (Home Assistant)" title="House">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M3 10.5 12 3l9 7.5" />
+              <path d="M5 9.5V21h14V9.5" />
+              <path d="M10 21v-6h4v6" />
+            </svg>
+          </a>
+        )}
         <Bell onOpenTask={onOpenTask} />
         <div className="relative" ref={menuRef}>
           <button onClick={() => setMenu((m) => !m)} aria-label={`Menu for ${me.name}`} className="rounded-full">

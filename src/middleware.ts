@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, readSessionToken } from "@/lib/session";
 
 // Everything needs a login except the login page/API, health check and PWA files.
-const PUBLIC = [/^\/login/, /^\/api\/auth\/login/, /^\/api\/health/, /^\/manifest\.webmanifest$/, /^\/sw\.js$/, /^\/icons\//];
+const PUBLIC = [/^\/login/, /^\/api\/auth\/login/, /^\/api\/auth\/verify/, /^\/api\/health/, /^\/manifest\.webmanifest$/, /^\/sw\.js$/, /^\/icons\//];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
