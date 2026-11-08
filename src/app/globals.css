@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --accent: #2563eb;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b1120;
+    --card: #111827;
+    --text: #e5e7eb;
+    --muted: #94a3b8;
+    --border: #1f2937;
+    --accent: #60a5fa;
+  }
+}
+
+html, body { background: var(--bg); color: var(--text); }
+body { -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
+
+/* FullCalendar theming so it follows light/dark mode */
+.fc {
+  --fc-border-color: var(--border);
+  --fc-page-bg-color: var(--card);
+  --fc-neutral-bg-color: var(--bg);
+  --fc-today-bg-color: color-mix(in srgb, var(--accent) 8%, transparent);
+  --fc-now-indicator-color: #ef4444;
+  font-size: 0.85rem;
+}
+.fc .fc-toolbar-title { font-size: 1.05rem; font-weight: 600; }
+.fc .fc-button { padding: 0.4rem 0.7rem; font-size: 0.85rem; border-radius: 0.6rem; }
+.fc .fc-button-primary { background: var(--card); color: var(--text); border-color: var(--border); }
+.fc .fc-button-primary:not(:disabled).fc-button-active,
+.fc .fc-button-primary:not(:disabled):active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.fc .fc-timegrid-slot { height: 3.2rem; }
+.fc .fc-event { border-radius: 0.5rem; border: none; padding: 2px 4px; }
+.fc .task-done { opacity: 0.55; }
+.fc .task-done .task-title { text-decoration: line-through; }
+.fc .fc-col-header-cell-cushion, .fc .fc-daygrid-day-number { color: var(--text); }
+
+.safe-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
