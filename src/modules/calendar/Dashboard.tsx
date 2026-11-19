@@ -89,6 +89,16 @@ export function Dashboard({ me, members, homeUrl }: { me: PublicMember; members:
       const t = arg.event.extendedProps.task as TaskDTO;
       const from = byId.get(t.createdBy)?.name ?? "?";
       const to = byId.get(t.assignedTo)?.name ?? "?";
+      // Short tasks (30 minutes or less) get one line so the text fits the small block.
+      const minutes = (Date.parse(t.endsAt) - Date.parse(t.startsAt)) / 60_000;
+      if (!t.allDay && minutes <= 30 && arg.view.type.startsWith("timeGrid")) {
+        return (
+          <div className="truncate leading-tight">
+            <span className="task-title font-semibold">{t.done ? "✓ " : ""}{arg.event.title}</span>
+            <span className="text-[0.7rem] opacity-90"> · {arg.timeText.split(" - ")[0]}</span>
+          </div>
+        );
+      }
       return (
         <div className="overflow-hidden leading-tight">
           <div className="task-title truncate font-semibold">
@@ -112,7 +122,7 @@ export function Dashboard({ me, members, homeUrl }: { me: PublicMember; members:
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         startsAt: event.start!.toISOString(),
-        endsAt: (event.end ?? new Date(event.start!.getTime() + 3_600_000)).toISOString(),
+        endsAt: (event.end ?? new Date(event.start!.getTime() + 30 * 60_000)).toISOString(),
         allDay: event.allDay,
       }),
     });
@@ -167,8 +177,11 @@ export function Dashboard({ me, members, homeUrl }: { me: PublicMember; members:
               locale="en-GB"
               firstDay={1}
               height="auto"
-              slotDuration="01:00:00"
-              snapDuration="01:00:00"
+              slotDuration="00:30:00"
+              snapDuration="00:15:00"
+              slotLabelInterval="01:00:00"
+              defaultTimedEventDuration="00:30:00"
+              eventMinHeight={22}
               slotMinTime="06:00:00"
               slotMaxTime="24:00:00"
               slotLabelFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
@@ -183,7 +196,8 @@ export function Dashboard({ me, members, homeUrl }: { me: PublicMember; members:
               selectable
               selectLongPressDelay={400}
               select={(arg: DateSelectArg) => {
-                if (!arg.allDay && arg.end.getTime() - arg.start.getTime() > 3_600_000) createAt(arg.start, false, arg.end);
+                // Dragging over several slots sets the length; a single tap uses the 30-minute default.
+                if (!arg.allDay && arg.end.getTime() - arg.start.getTime() > 30 * 60_000) createAt(arg.start, false, arg.end);
               }}
               eventDrop={move}
               eventResize={move}
@@ -196,7 +210,9 @@ export function Dashboard({ me, members, homeUrl }: { me: PublicMember; members:
       <button
         onClick={() => {
           const now = new Date();
-          createAt(new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() + 1), false);
+          // Next half hour, e.g. 14:07 -> 14:30
+          const next = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes() < 30 ? 30 : 60);
+          createAt(next, false);
         }}
         className="fixed bottom-6 right-5 z-30 rounded-full bg-[var(--accent)] px-6 py-4 text-lg font-semibold text-white shadow-lg active:scale-95"
         style={{ marginBottom: "env(safe-area-inset-bottom)" }}

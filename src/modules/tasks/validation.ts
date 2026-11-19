@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+/** Timed tasks last at least 15 minutes (all-day tasks are a whole day anyway). */
+export const MIN_TASK_MS = 15 * 60_000;
+
 const isoDate = z.string().datetime({ offset: true }).transform((s) => new Date(s));
 
 export const createTaskSchema = z
@@ -11,7 +14,8 @@ export const createTaskSchema = z
     allDay: z.boolean().optional().default(false),
     assignedTo: z.number().int().positive(),
   })
-  .refine((t) => t.endsAt > t.startsAt, { message: "End must be after start", path: ["endsAt"] });
+  .refine((t) => t.endsAt > t.startsAt, { message: "End must be after start", path: ["endsAt"] })
+  .refine((t) => t.allDay || +t.endsAt - +t.startsAt >= MIN_TASK_MS, { message: "A task needs at least 15 minutes", path: ["endsAt"] });
 
 export const updateTaskSchema = z
   .object({

@@ -20,14 +20,21 @@ type Props = {
   onEdit: (task: TaskDTO) => void;
 };
 
+// Duration in minutes; 0 = all day. New tasks last 30 minutes unless you pick something else.
+export const MIN_MINUTES = 15;
+export const DEFAULT_MINUTES = 30;
 const DURATIONS = [
-  { label: "1 h", hours: 1 },
-  { label: "2 h", hours: 2 },
-  { label: "3 h", hours: 3 },
-  { label: "4 h", hours: 4 },
-  { label: "All day", hours: 0 },
+  { label: "15 min", minutes: 15 },
+  { label: "30 min", minutes: 30 },
+  { label: "45 min", minutes: 45 },
+  { label: "1 h", minutes: 60 },
+  { label: "1½ h", minutes: 90 },
+  { label: "2 h", minutes: 120 },
+  { label: "All day", minutes: 0 },
 ];
-const HOURS = Array.from({ length: 24 }, (_, h) => h);
+const MINUTE = 60_000;
+const toTimeInput = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const minutesBetween = (a: Date, b: Date) => Math.max(MIN_MINUTES, Math.round((+b - +a) / MINUTE));
 const pad = (n: number) => String(n).padStart(2, "0");
 const toDateInput = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
@@ -70,22 +77,24 @@ function TaskForm({
         title: state.task.title,
         notes: state.task.notes ?? "",
         start: new Date(state.task.startsAt),
-        hours: state.task.allDay ? 0 : Math.max(1, Math.round((+new Date(state.task.endsAt) - +new Date(state.task.startsAt)) / 3_600_000)),
+        minutes: state.task.allDay ? 0 : minutesBetween(new Date(state.task.startsAt), new Date(state.task.endsAt)),
         assignedTo: state.task.assignedTo,
       }
     : {
         title: "",
         notes: "",
         start: state.start,
-        hours: state.allDay ? 0 : state.end ? Math.max(1, Math.round((+state.end - +state.start) / 3_600_000)) : 1,
+        minutes: state.allDay ? 0 : state.end ? minutesBetween(state.start, state.end) : DEFAULT_MINUTES,
         assignedTo: me.id,
       };
 
   const [title, setTitle] = useState(initial.title);
   const [notes, setNotes] = useState(initial.notes);
   const [date, setDate] = useState(toDateInput(initial.start));
-  const [hour, setHour] = useState(initial.hours === 0 ? 9 : initial.start.getHours());
-  const [hours, setHours] = useState(initial.hours);
+  const [time, setTime] = useState(initial.minutes === 0 ? "09:00" : toTimeInput(initial.start));
+  const [minutes, setMinutes] = useState(initial.minutes);
+  // Custom length in minutes, shown when it isn't one of the quick buttons.
+  const [custom, setCustom] = useState(DURATIONS.some((d) => d.minutes === initial.minutes) ? "" : String(initial.minutes));
   const [assignedTo, setAssignedTo] = useState(initial.assignedTo);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -95,9 +104,16 @@ function TaskForm({
     setBusy(true);
     setError("");
     const [y, m, d] = date.split("-").map(Number);
-    const allDay = hours === 0;
-    const start = allDay ? new Date(y, m - 1, d, 0) : new Date(y, m - 1, d, hour);
-    const end = allDay ? new Date(y, m - 1, d + 1, 0) : new Date(start.getTime() + hours * 3_600_000);
+    const [hh, mm] = time.split(":").map(Number);
+    const allDay = minutes === 0;
+    const length = custom ? Number(custom) : minutes;
+    if (!allDay && (!Number.isFinite(length) || length < MIN_MINUTES)) {
+      setError(`A task needs at least ${MIN_MINUTES} minutes`);
+      setBusy(false);
+      return;
+    }
+    const start = allDay ? new Date(y, m - 1, d, 0) : new Date(y, m - 1, d, hh || 0, mm || 0);
+    const end = allDay ? new Date(y, m - 1, d + 1, 0) : new Date(start.getTime() + length * MINUTE);
     const body = { title, notes: notes || null, startsAt: start.toISOString(), endsAt: end.toISOString(), allDay, assignedTo };
     try {
       if (state.mode === "edit") await api(`/api/tasks/${state.task.id}`, "PATCH", body);
@@ -143,29 +159,52 @@ function TaskForm({
         </label>
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium">Time</span>
-          <select value={hour} disabled={hours === 0} onChange={(e) => setHour(Number(e.target.value))} className={`${input} disabled:opacity-40`}>
-            {HOURS.map((h) => (
-              <option key={h} value={h}>{`${pad(h)}:00`}</option>
-            ))}
-          </select>
+          <input
+            type="time"
+            required={minutes !== 0}
+            step={60}
+            value={time}
+            disabled={minutes === 0}
+            onChange={(e) => setTime(e.target.value)}
+            className={`${input} disabled:opacity-40`}
+          />
         </label>
       </div>
 
       <div>
         <span className="text-sm font-medium">How long?</span>
         <div className="mt-1 flex flex-wrap gap-2">
-          {DURATIONS.map((d) => (
-            <button
-              type="button"
-              key={d.label}
-              onClick={() => setHours(d.hours)}
-              aria-pressed={hours === d.hours}
-              className={`rounded-full border px-4 py-1.5 ${hours === d.hours ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--border)]"}`}
-            >
-              {d.label}
-            </button>
-          ))}
+          {DURATIONS.map((d) => {
+            const on = !custom && minutes === d.minutes;
+            return (
+              <button
+                type="button"
+                key={d.label}
+                onClick={() => { setMinutes(d.minutes); setCustom(""); }}
+                aria-pressed={on}
+                className={`rounded-full border px-4 py-1.5 ${on ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--border)]"}`}
+              >
+                {d.label}
+              </button>
+            );
+          })}
         </div>
+        <label className="mt-2 flex items-center gap-2 text-sm">
+          <span>Or exactly</span>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={MIN_MINUTES}
+            max={24 * 60}
+            step={5}
+            placeholder="e.g. 40"
+            value={custom}
+            onChange={(e) => { setCustom(e.target.value); if (minutes === 0) setMinutes(DEFAULT_MINUTES); }}
+            className="w-24 rounded-xl border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-base"
+            aria-label="Length in minutes"
+          />
+          <span>minutes</span>
+        </label>
       </div>
 
       <label className="flex flex-col gap-1">

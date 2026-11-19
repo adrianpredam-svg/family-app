@@ -38,7 +38,7 @@ body { -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
 .fc .fc-button-primary { background: var(--card); color: var(--text); border-color: var(--border); }
 .fc .fc-button-primary:not(:disabled).fc-button-active,
 .fc .fc-button-primary:not(:disabled):active { background: var(--accent); border-color: var(--accent); color: #fff; }
-.fc .fc-timegrid-slot { height: 3.2rem; }
+.fc .fc-timegrid-slot { height: 1.9rem; } /* 30-minute rows */
 .fc .fc-event { border-radius: 0.5rem; border: none; padding: 2px 4px; }
 .fc .task-done { opacity: 0.55; }
 .fc .task-done .task-title { text-decoration: line-through; }

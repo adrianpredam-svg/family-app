@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { getCurrentMember } from "@/lib/auth";
 import { badRequest, forbidden, json, notFound, unauthorized } from "@/lib/api";
-import { updateTaskSchema } from "@/modules/tasks/validation";
+import { MIN_TASK_MS, updateTaskSchema } from "@/modules/tasks/validation";
 import { toDTO } from "@/modules/tasks/repo";
 import { canDeleteTask, canEditTask } from "@/modules/tasks/permissions";
 import { notifyTaskEvent } from "@/modules/notifications/service";
@@ -36,6 +36,8 @@ export async function PATCH(req: Request, { params }: Ctx) {
   const startsAt = changes.startsAt ?? before.startsAt;
   const endsAt = changes.endsAt ?? before.endsAt;
   if (endsAt <= startsAt) return badRequest("End must be after start");
+  const allDay = changes.allDay ?? before.allDay;
+  if (!allDay && +endsAt - +startsAt < MIN_TASK_MS) return badRequest("A task needs at least 15 minutes");
 
   const db = getDb();
   if (changes.assignedTo) {
