@@ -45,3 +45,8 @@ body { -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
 .fc .fc-col-header-cell-cushion, .fc .fc-daygrid-day-number { color: var(--text); }
 
 .safe-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+
+/* Family banner: one row, text loops right to left */
+.banner-scroll { animation-name: banner-marquee; animation-timing-function: linear; animation-iteration-count: infinite; will-change: transform; }
+.banner-track:hover .banner-scroll { animation-play-state: paused; }
+@keyframes banner-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }

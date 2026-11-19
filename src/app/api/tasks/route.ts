@@ -2,7 +2,7 @@ import { and, eq, gt, lt } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { getCurrentMember } from "@/lib/auth";
 import { badRequest, json, unauthorized } from "@/lib/api";
-import { createTaskSchema, rangeSchema } from "@/modules/tasks/validation";
+import { bannerTextFor, createTaskSchema, rangeSchema } from "@/modules/tasks/validation";
 import { toDTO } from "@/modules/tasks/repo";
 import { notifyTaskEvent } from "@/modules/notifications/service";
 
@@ -35,7 +35,12 @@ export async function POST(req: Request) {
 
   const [task] = await db
     .insert(schema.tasks)
-    .values({ ...parsed.data, notes: parsed.data.notes || null, createdBy: me.id })
+    .values({
+      ...parsed.data,
+      notes: parsed.data.notes || null,
+      bannerText: bannerTextFor(parsed.data.banner, parsed.data.bannerText, parsed.data.title),
+      createdBy: me.id,
+    })
     .returning();
 
   await notifyTaskEvent({ kind: "created", actorId: me.id, task }, task);

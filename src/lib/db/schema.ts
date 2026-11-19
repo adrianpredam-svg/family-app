@@ -35,13 +35,16 @@ export const tasks = pgTable(
       .notNull()
       .references(() => members.id, { onDelete: "cascade" }),
     done: boolean("done").notNull().default(false),
+    // Shown in the scrolling banner the day before (and on the day until it starts).
+    banner: boolean("banner").notNull().default(false),
+    bannerText: text("banner_text"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("tasks_starts_at_idx").on(t.startsAt), index("tasks_assigned_to_idx").on(t.assignedTo)],
 );
 
-export const notificationType = pgEnum("notification_type", ["assigned", "updated", "done"]);
+export const notificationType = pgEnum("notification_type", ["assigned", "updated", "done", "banner"]);
 
 /** In-app notifications (the bell). */
 export const notifications = pgTable(
@@ -63,6 +66,22 @@ export const notifications = pgTable(
   (t) => [index("notifications_member_idx").on(t.memberId, t.readAt)],
 );
 
+/** Messages someone writes for the banner. to_member = null means everyone. */
+export const bannerMessages = pgTable(
+  "banner_messages",
+  {
+    id: serial("id").primaryKey(),
+    fromMember: integer("from_member")
+      .notNull()
+      .references(() => members.id, { onDelete: "cascade" }),
+    toMember: integer("to_member").references(() => members.id, { onDelete: "cascade" }),
+    text: text("text").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [index("banner_messages_expires_idx").on(t.expiresAt)],
+);
+
 /** Browser/phone push subscriptions, one per device. */
 export const pushSubscriptions = pgTable("push_subscriptions", {
   id: serial("id").primaryKey(),
@@ -79,3 +98,4 @@ export const pushSubscriptions = pgTable("push_subscriptions", {
 export type Member = typeof members.$inferSelect;
 export type Task = typeof tasks.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
+export type BannerMessage = typeof bannerMessages.$inferSelect;

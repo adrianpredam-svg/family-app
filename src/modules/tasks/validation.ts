@@ -13,6 +13,8 @@ export const createTaskSchema = z
     endsAt: isoDate,
     allDay: z.boolean().optional().default(false),
     assignedTo: z.number().int().positive(),
+    banner: z.boolean().optional().default(false),
+    bannerText: z.string().trim().max(140).optional().nullable(),
   })
   .refine((t) => t.endsAt > t.startsAt, { message: "End must be after start", path: ["endsAt"] })
   .refine((t) => t.allDay || +t.endsAt - +t.startsAt >= MIN_TASK_MS, { message: "A task needs at least 15 minutes", path: ["endsAt"] });
@@ -26,6 +28,8 @@ export const updateTaskSchema = z
     allDay: z.boolean().optional(),
     assignedTo: z.number().int().positive().optional(),
     done: z.boolean().optional(),
+    banner: z.boolean().optional(),
+    bannerText: z.string().trim().max(140).optional().nullable(),
   })
   .refine((t) => !(t.startsAt && t.endsAt) || t.endsAt > t.startsAt, {
     message: "End must be after start",
@@ -33,3 +37,9 @@ export const updateTaskSchema = z
   });
 
 export const rangeSchema = z.object({ start: isoDate, end: isoDate });
+
+/** Banner text defaults to the task title when the box is ticked but the text is empty. */
+export function bannerTextFor(banner: boolean, bannerText: string | null | undefined, title: string): string | null {
+  if (!banner) return bannerText?.trim() || null;
+  return bannerText?.trim() || title.slice(0, 140);
+}

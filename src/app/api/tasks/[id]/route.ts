@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { getCurrentMember } from "@/lib/auth";
 import { badRequest, forbidden, json, notFound, unauthorized } from "@/lib/api";
-import { MIN_TASK_MS, updateTaskSchema } from "@/modules/tasks/validation";
+import { MIN_TASK_MS, bannerTextFor, updateTaskSchema } from "@/modules/tasks/validation";
 import { toDTO } from "@/modules/tasks/repo";
 import { canDeleteTask, canEditTask } from "@/modules/tasks/permissions";
 import { notifyTaskEvent } from "@/modules/notifications/service";
@@ -47,15 +47,24 @@ export async function PATCH(req: Request, { params }: Ctx) {
 
   const [after] = await db
     .update(schema.tasks)
-    .set({ ...changes, notes: changes.notes === undefined ? undefined : changes.notes || null, updatedAt: new Date() })
+    .set({
+      ...changes,
+      notes: changes.notes === undefined ? undefined : changes.notes || null,
+      bannerText:
+        changes.banner === undefined && changes.bannerText === undefined
+          ? undefined
+          : bannerTextFor(changes.banner ?? before.banner, changes.bannerText !== undefined ? changes.bannerText : before.bannerText, changes.title ?? before.title),
+      updatedAt: new Date(),
+    })
     .where(eq(schema.tasks.id, before.id))
     .returning();
 
   // Ticking "done" is its own kind of news; any other change is an update.
   const onlyDoneChanged = Object.keys(changes).every((k) => k === "done");
+  const onlyBannerChanged = Object.keys(changes).every((k) => k === "banner" || k === "bannerText");
   if (changes.done === true && !before.done && onlyDoneChanged) {
     await notifyTaskEvent({ kind: "done", actorId: me.id, task: after }, after);
-  } else if (!onlyDoneChanged) {
+  } else if (!onlyDoneChanged && !onlyBannerChanged) {
     await notifyTaskEvent({ kind: "updated", actorId: me.id, before, after }, after);
   }
   return json(toDTO(after));

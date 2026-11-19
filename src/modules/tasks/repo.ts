@@ -11,6 +11,8 @@ export type TaskDTO = {
   createdBy: number;
   assignedTo: number;
   done: boolean;
+  banner: boolean;
+  bannerText: string | null;
 };
 
 export function toDTO(t: Task): TaskDTO {
@@ -24,5 +26,7 @@ export function toDTO(t: Task): TaskDTO {
     createdBy: t.createdBy,
     assignedTo: t.assignedTo,
     done: t.done,
+    banner: t.banner,
+    bannerText: t.bannerText,
   };
 }

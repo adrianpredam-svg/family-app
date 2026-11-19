@@ -9,6 +9,7 @@ import type { PublicMember } from "@/lib/auth";
 import type { TaskDTO } from "@/modules/tasks/repo";
 import { TaskSheet, type SheetState } from "@/modules/tasks/TaskSheet";
 import { Header } from "./Header";
+import { Banner } from "@/modules/banner/Banner";
 
 type Filter = "all" | "mine" | number;
 
@@ -27,7 +28,12 @@ export function Dashboard({ me, members, homeUrl }: { me: PublicMember; members:
     setMounted(true);
   }, []);
 
-  const refresh = useCallback(() => calendar.current?.getApi().refetchEvents(), []);
+  const [bannerKey, setBannerKey] = useState(0);
+  // Reload the calendar and the banner (a task may have been ticked "Show in the banner").
+  const refresh = useCallback(() => {
+    calendar.current?.getApi().refetchEvents();
+    setBannerKey((k) => k + 1);
+  }, []);
 
   const openTask = useCallback(async (taskId: number) => {
     const res = await fetch(`/api/tasks/${taskId}`);
@@ -147,6 +153,7 @@ export function Dashboard({ me, members, homeUrl }: { me: PublicMember; members:
   return (
     <div className="mx-auto flex min-h-dvh max-w-6xl flex-col">
       <Header me={me} onOpenTask={openTask} homeUrl={homeUrl} />
+      <Banner me={me} members={members} refreshKey={bannerKey} onOpenTask={openTask} />
 
       <nav className="flex gap-2 overflow-x-auto px-4 pb-3" aria-label="Show tasks for">
         {chips.map((c) => (

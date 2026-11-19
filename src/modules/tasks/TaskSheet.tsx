@@ -79,6 +79,8 @@ function TaskForm({
         start: new Date(state.task.startsAt),
         minutes: state.task.allDay ? 0 : minutesBetween(new Date(state.task.startsAt), new Date(state.task.endsAt)),
         assignedTo: state.task.assignedTo,
+        banner: state.task.banner,
+        bannerText: state.task.bannerText ?? "",
       }
     : {
         title: "",
@@ -86,9 +88,16 @@ function TaskForm({
         start: state.start,
         minutes: state.allDay ? 0 : state.end ? minutesBetween(state.start, state.end) : DEFAULT_MINUTES,
         assignedTo: me.id,
+        banner: false,
+        bannerText: "",
       };
 
   const [title, setTitle] = useState(initial.title);
+  const [banner, setBanner] = useState(initial.banner);
+  const [bannerText, setBannerText] = useState(initial.bannerText || initial.title);
+  // The banner text follows the title until someone changes it by hand.
+  const [bannerEdited, setBannerEdited] = useState(!!initial.bannerText && initial.bannerText !== initial.title);
+  const changeTitle = (v: string) => { setTitle(v); if (!bannerEdited) setBannerText(v.slice(0, 140)); };
   const [notes, setNotes] = useState(initial.notes);
   const [date, setDate] = useState(toDateInput(initial.start));
   const [time, setTime] = useState(initial.minutes === 0 ? "09:00" : toTimeInput(initial.start));
@@ -114,7 +123,10 @@ function TaskForm({
     }
     const start = allDay ? new Date(y, m - 1, d, 0) : new Date(y, m - 1, d, hh || 0, mm || 0);
     const end = allDay ? new Date(y, m - 1, d + 1, 0) : new Date(start.getTime() + length * MINUTE);
-    const body = { title, notes: notes || null, startsAt: start.toISOString(), endsAt: end.toISOString(), allDay, assignedTo };
+    const body = {
+      title, notes: notes || null, startsAt: start.toISOString(), endsAt: end.toISOString(), allDay, assignedTo,
+      banner, bannerText: banner ? bannerText.trim() || title : null,
+    };
     try {
       if (state.mode === "edit") await api(`/api/tasks/${state.task.id}`, "PATCH", body);
       else await api("/api/tasks", "POST", body);
@@ -130,7 +142,7 @@ function TaskForm({
     <form onSubmit={save} className="flex flex-col gap-4">
       <label className="flex flex-col gap-1">
         <span className="text-sm font-medium">What?</span>
-        <input autoFocus required maxLength={120} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Buy milk" className={input} />
+        <input autoFocus required maxLength={120} value={title} onChange={(e) => changeTitle(e.target.value)} placeholder="e.g. Buy milk" className={input} />
       </label>
 
       <div>
@@ -212,6 +224,26 @@ function TaskForm({
         <textarea rows={2} maxLength={2000} value={notes} onChange={(e) => setNotes(e.target.value)} className={input} />
       </label>
 
+      <div className="flex flex-col gap-2 rounded-xl border border-[var(--border)] p-3">
+        <label className="flex items-center gap-3 font-medium">
+          <input type="checkbox" checked={banner} onChange={(e) => setBanner(e.target.checked)} className="h-6 w-6 accent-[var(--accent)]" />
+          📣 Show in the banner
+        </label>
+        {banner && (
+          <>
+            <input
+              maxLength={140}
+              value={bannerText}
+              onChange={(e) => { setBannerText(e.target.value); setBannerEdited(true); }}
+              placeholder={title || "Banner text"}
+              className={input}
+              aria-label="Banner text"
+            />
+            <span className="text-xs text-[var(--muted)]">Shown at the top the day before and on the day until it starts. Change the text if you like.</span>
+          </>
+        )}
+      </div>
+
       {error && <p role="alert" className="text-sm text-red-500">{error}</p>}
       <button disabled={busy} className="rounded-2xl bg-[var(--accent)] py-4 text-lg font-semibold text-white disabled:opacity-50">
         {busy ? "Saving…" : state.mode === "edit" ? "Save changes" : "Add task"}
@@ -274,6 +306,7 @@ function TaskDetails({
           {target && <Avatar name={target.name} color={target.color} size={28} />}
         </div>
         {task.notes && <p className="whitespace-pre-wrap">{task.notes}</p>}
+        {task.banner && <p className="rounded-xl bg-[var(--bg)] p-3 text-sm">📣 In the banner: <b>{task.bannerText || task.title}</b></p>}
         {task.done && <p className="font-medium text-green-600">✓ Done</p>}
         {error && <p role="alert" className="text-sm text-red-500">{error}</p>}
 
