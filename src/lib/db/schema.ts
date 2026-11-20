@@ -6,6 +6,8 @@ export const members = pgTable("members", {
   name: text("name").notNull().unique(),
   color: text("color").notNull().default("#2563eb"),
   pinHash: text("pin_hash").notNull(),
+  // true once the member chose their own PIN; then FAMILY_MEMBERS no longer overwrites it
+  pinSetByMember: boolean("pin_set_by_member").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

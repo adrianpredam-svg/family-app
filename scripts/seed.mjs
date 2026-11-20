@@ -25,13 +25,22 @@ function parseMembers(value) {
     });
 }
 
+// Names whose PIN should be reset to the one in FAMILY_MEMBERS (e.g. a forgotten PIN): FAMILY_PIN_RESET=Sonia
+const resetNames = new Set((process.env.FAMILY_PIN_RESET ?? "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean));
+
 async function upsertMember({ name, pin, color }) {
   const pinHash = await bcrypt.hash(pin, 10);
+  const reset = resetNames.has(name.toLowerCase());
+  // New members get the PIN from FAMILY_MEMBERS. Existing members keep a PIN they changed themselves,
+  // unless their name is in FAMILY_PIN_RESET.
   const [row] = await sql`
     insert into members (name, color, pin_hash) values (${name}, ${color}, ${pinHash})
-    on conflict (name) do update set color = excluded.color, pin_hash = excluded.pin_hash
-    returning id`;
-  console.log(`Member ready: ${name}`);
+    on conflict (name) do update set
+      color = excluded.color,
+      pin_hash = case when members.pin_set_by_member and not ${reset} then members.pin_hash else excluded.pin_hash end,
+      pin_set_by_member = case when ${reset} then false else members.pin_set_by_member end
+    returning id, pin_set_by_member`;
+  console.log(`Member ready: ${name}${row.pin_set_by_member ? " (keeps own PIN)" : ""}${reset ? " (PIN reset)" : ""}`);
   return row.id;
 }
 

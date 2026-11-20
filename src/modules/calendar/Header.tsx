@@ -4,11 +4,13 @@ import { Avatar } from "@/components/ui/Avatar";
 import type { PublicMember } from "@/lib/auth";
 import { Bell } from "@/modules/notifications/Bell";
 import { isIos, isStandalone, usePush } from "@/modules/notifications/usePush";
+import { ChangePin } from "@/modules/auth/ChangePin";
 
 const HINT_KEY = "install-hint-dismissed";
 
 export function Header({ me, onOpenTask, homeUrl }: { me: PublicMember; onOpenTask: (id: number) => void; homeUrl: string | null }) {
   const [menu, setMenu] = useState(false);
+  const [pinOpen, setPinOpen] = useState(false);
   const [today, setToday] = useState("");
   const [showInstallHint, setShowInstallHint] = useState(false);
   const push = usePush();
@@ -21,6 +23,8 @@ export function Header({ me, onOpenTask, homeUrl }: { me: PublicMember; onOpenTa
       dismissed = localStorage.getItem(HINT_KEY) === "1";
     } catch {}
     setShowInstallHint(isIos() && !isStandalone() && !dismissed);
+    // Other apps (e.g. the journal) can link to /?pin=1 to open "Change my PIN"
+    if (new URLSearchParams(window.location.search).get("pin")) { setPinOpen(true); window.history.replaceState(null, "", "/"); }
   }, []);
 
   useEffect(() => {
@@ -87,6 +91,9 @@ export function Header({ me, onOpenTask, homeUrl }: { me: PublicMember; onOpenTa
               >
                 {pushLabel}
               </button>
+              <button onClick={() => { setMenu(false); setPinOpen(true); }} className="block w-full border-b border-[var(--border)] px-4 py-3 text-left">
+                🔑 Change my PIN
+              </button>
               <button onClick={logout} className="block w-full px-4 py-3 text-left text-red-600">
                 Log out
               </button>
@@ -114,6 +121,7 @@ export function Header({ me, onOpenTask, homeUrl }: { me: PublicMember; onOpenTa
           </button>
         </div>
       )}
+      <ChangePin open={pinOpen} onClose={() => setPinOpen(false)} />
     </>
   );
 }

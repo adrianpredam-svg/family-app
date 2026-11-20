@@ -1,0 +1,1 @@
+ALTER TABLE "members" ADD COLUMN "pin_set_by_member" boolean DEFAULT false NOT NULL;

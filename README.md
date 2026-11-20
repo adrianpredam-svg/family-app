@@ -29,7 +29,11 @@ Set these in Coolify → your app → Environment Variables. See `.env.example`.
 | `HOME_URL` | Optional house button, e.g. `https://home.preda.app/preda-home-drawing/plan` |
 | `SEED_DEMO_DATA` | `true` only for preview deployments (adds Mum/Dad/Kid with PIN 0000) |
 
-**Add a family member or change a PIN:** edit `FAMILY_MEMBERS` in Coolify and redeploy.
+**Add a family member:** add them to `FAMILY_MEMBERS` in Coolify and redeploy (they start with that PIN).
+**Change a PIN:** everyone can do it themselves — tap your avatar → 🔑 Change my PIN. After that,
+`FAMILY_MEMBERS` no longer overwrites their PIN.
+**Forgotten PIN:** put the new PIN for that person in `FAMILY_MEMBERS`, add `FAMILY_PIN_RESET=Sonia`
+(names, comma separated), redeploy once, then remove `FAMILY_PIN_RESET` again.
 Every start runs the database migrations and creates/updates the members.
 
 ## Run it on your computer
